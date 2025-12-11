@@ -2,6 +2,8 @@ body {
   font-family: system-ui, -apple-system, sans-serif;
   margin: 0;
   padding: 1rem 2rem;
+  background: #ffffff;
+  color: #111827; /* very dark grey, good contrast */
 }
 
 h1 {
@@ -21,16 +23,16 @@ h2 {
 }
 
 .card {
-  border: 1px solid #ccc;
+  border: 1px solid #d4d4d8;        /* higher contrast border */
   border-radius: 4px;
   padding: 1rem;
   margin-bottom: 1rem;
-  background: #fafafa;
+  background: #f9fafb;              /* very light grey */
 }
 
 .small {
-  font-size: 0.8rem;
-  color: #555;
+  font-size: 0.85rem;
+  color: #374151;                   /* darker than #555 */
 }
 
 table {
@@ -41,14 +43,15 @@ table {
 
 th,
 td {
-  border: 1px solid #ddd;
+  border: 1px solid #d4d4d8;
   padding: 0.4rem 0.6rem;
   font-size: 0.9rem;
   text-align: left;
 }
 
 th {
-  background: #f0f0f0;
+  background: #e5e7eb;              /* header row contrast */
+  color: #111827;
 }
 
 input[type="number"] {
@@ -57,49 +60,79 @@ input[type="number"] {
 
 input,
 select {
-  padding: 0.2rem 0.3rem;
+  padding: 0.25rem 0.4rem;
+  border-radius: 4px;
+  border: 1px solid #9ca3af;
+  font-size: 0.9rem;
 }
 
+/* Textarea styling */
 textarea {
   width: 100%;
   min-height: 160px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
   font-size: 0.85rem;
+  border-radius: 4px;
+  border: 1px solid #9ca3af;
+  padding: 0.4rem 0.5rem;
 }
 
+/* Buttons with good contrast and clear focus */
 button {
   padding: 0.4rem 0.8rem;
   cursor: pointer;
   border-radius: 4px;
-  border: 1px solid #888;
-  background: #f9f9f9;
+  border: 1px solid #111827;
+  background: #111827;
+  color: #f9fafb;
+  font-size: 0.9rem;
 }
 
 button:hover {
-  background: #f1f1f1;
+  background: #1f2937;
+  border-color: #1f2937;
 }
 
+/* Smaller buttons for +/- people controls */
+.people-btn {
+  padding: 0.15rem 0.5rem;
+  font-size: 0.85rem;
+  margin: 0 0.15rem;
+}
+
+/* Focus visible for all interactive controls */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* Badges with AA contrast */
 .badge {
   display: inline-block;
-  padding: 0.1rem 0.4rem;
-  border-radius: 10px;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
   font-size: 0.75rem;
   margin-left: 0.3rem;
+  font-weight: 500;
 }
 
 .badge-good {
-  background: #e0f7e9;
-  color: #166534;
+  background: #ecfdf5;   /* very light green */
+  color: #065f46;        /* dark green, high contrast */
 }
 
 .badge-ok {
-  background: #fef9c3;
-  color: #854d0e;
+  background: #fffbeb;   /* very light amber */
+  color: #92400e;        /* dark amber, high contrast */
 }
 
 .badge-bad {
-  background: #fee2e2;
-  color: #991b1b;
+  background: #fef2f2;   /* very light red */
+  color: #b91c1c;        /* dark red, high contrast */
 }
 
 .error {
@@ -108,5 +141,28 @@ button:hover {
 }
 
 .muted {
-  color: #777;
+  color: #4b5563;        /* darker muted text */
+}
+
+/* Link color with good contrast */
+a {
+  color: #1d4ed8;
+}
+
+a:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* Optional visually hidden text helper if you need it later */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

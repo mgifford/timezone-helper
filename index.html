@@ -13,7 +13,13 @@
     Cities are sorted east to west by longitude. The URL hash is updated so you can share the setup.
   </p>
 
-  <div id="loadError" class="error" style="display:none;"></div>
+  <div
+  id="loadError"
+  class="error"
+  role="alert"
+  aria-live="assertive"
+  style="display:none;"
+></div>
 
   <div class="card">
     <h2>1. Add cities</h2>
@@ -36,14 +42,20 @@
         <button type="submit">Add city</button>
       </div>
     </form>
-    <p id="addCityError" class="error" style="display:none;"></p>
+    <p
+  id="addCityError"
+  class="error"
+  role="alert"
+  aria-live="assertive"
+  style="display:none;"
+></p>
   </div>
 
   <div class="card">
   <h2>2. Meeting parameters</h2>
   <div class="flex">
     <div>
-      <label>
+      <label for="dateInput">
         Date (UTC, optional)<br>
         <input type="date" id="dateInput">
       </label>
@@ -52,7 +64,7 @@
       </div>
     </div>
     <div>
-      <label>
+      <label for="timeInput">
         Time (UTC, optional)<br>
         <input type="time" id="timeInput" placeholder="(optional)">
       </label>
@@ -61,7 +73,7 @@
       </div>
     </div>
     <div>
-      <label>
+      <label for="lengthInput">
         Length (minutes)<br>
         <select id="lengthInput">
           <option value="30">30</option>
@@ -105,22 +117,32 @@
 </div>
 
 <div class="card" id="cardSuggestions">
-    <h2>4. Suggested meeting times</h2>
-    <div id="suggestionsContainer" class="small">
-      Add at least one city to see suggestions.
-    </div>
+  <h2 id="suggestionsHeading">4. Suggested meeting times</h2>
+  <div
+    id="suggestionsContainer"
+    class="small"
+    role="status"
+    aria-live="polite"
+    aria-labelledby="suggestionsHeading"
+  >
+    Add at least one city to see suggestions.
   </div>
+</div>
 
   <div class="card" id="cardMarkdown">
     <h2>5. GitHub issue Markdown</h2>
-    <p class="small">
-      Paste this into a GitHub issue and use reactions as votes.  
-      For example: ❤️ for Option A, 🚀 for Option B
-    </p>
+    <label for="markdownOutput">
+      Vote in GitHub
+    </label>
     <textarea id="markdownOutput" readonly></textarea>
     <div style="margin-top:0.5rem;">
       <button id="copyMarkdownBtn" type="button">Copy Markdown</button>
     </div>
+    <p class="small"></p>
+      Paste this into a GitHub issue and use reactions as votes.  
+      For example: ❤️ for Option A, 🚀 for Option B
+    </p>
+
     <p class="small muted">
       Want to improve this tool? Check out our <a href="https://github.com/mgifford/timezone-helper">GitHub Repo</a>
     </p>

@@ -1,5 +1,5 @@
 // Configuration
-const CITIES_URL = "data/timezones-filtered.json";
+const CITIES_URL = "data/timezones-with-latlon.json";
 const STORAGE_KEY = "global-meeting-helper-v1";
 
 // In-memory state
