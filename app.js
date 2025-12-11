@@ -15,6 +15,44 @@ function pad2(n) {
   return n.toString().padStart(2, "0");
 }
 
+function findCityForTimeZone(tz) {
+  if (!tz) return null;
+
+  // Exact match first
+  let matches = allCities.filter(c => c.tz === tz);
+  if (matches.length) {
+    return matches[0];
+  }
+
+  // Fallback: case-insensitive match
+  const lower = tz.toLowerCase();
+  matches = allCities.filter(c => c.tz.toLowerCase() === lower);
+  if (matches.length) {
+    return matches[0];
+  }
+
+  return null;
+}
+
+/**
+ * Ensure there is at least one city in citiesInPoll with the user's timezone.
+ * Returns the city that was added (clone) or null if nothing was added.
+ */
+function ensureOrganizerCityPresent() {
+  // Already present?
+  const has = citiesInPoll.some(c => c.tz === USER_TZ);
+  if (has) return null;
+
+  const base = findCityForTimeZone(USER_TZ);
+  if (!base) return null;
+
+  const clone = { ...base, people: 1 };
+  citiesInPoll.push(clone);
+  citiesInPoll.sort((a, b) => b.lon - a.lon);
+  updateHashFromCities();
+  return clone;
+}
+
 function showError(msg) {
   const el = document.getElementById("loadError");
   if (!el) return;
@@ -324,7 +362,7 @@ function parseDateTimeSettings() {
   }
 
   let timeInfo = null;
-  if (timeStr) {
+  if (isTimeEnabled() && timeStr) {
     const [hh, mm] = timeStr.split(":").map(Number);
     timeInfo = { hour: hh || 0, minute: mm || 0 };
   }
@@ -346,6 +384,11 @@ function buildUtcDate(dateInfo, hour, minute) {
       minute
     ));
   }
+}
+
+function isTimeEnabled() {
+  const cb = document.getElementById("timeEnabled");
+  return !!(cb && cb.checked);
 }
 
 function addMinutes(date, minutes) {
@@ -539,6 +582,7 @@ function generateSuggestions(cities) {
   const lengthEl = document.getElementById("lengthInput");
   const lengthMinutes = parseInt(lengthEl ? lengthEl.value : "60", 10) || 60;
   const { dateInfo, timeInfo } = parseDateTimeSettings();
+  const userSlotUtc = timeInfo ? userLocalTimeToUtc(dateInfo, timeInfo) : null;
 
   const searchSlots = [];
 
@@ -557,8 +601,7 @@ function generateSuggestions(cities) {
   // Two best automatic options
   const auto = searchSlots.slice(0, 2);
 
-  // Organizer’s chosen time in USER_TZ, if time is specified
-  const userSlotUtc = userLocalTimeToUtc(dateInfo, timeInfo);
+  // Organizer’s chosen time in USER_TZ, if time is specified and enabled
   if (userSlotUtc) {
     const userScore = scoreSlot(cities, userSlotUtc, lengthMinutes);
     const existing = auto.find(
@@ -568,7 +611,6 @@ function generateSuggestions(cities) {
     if (existing) {
       existing.isUserProposed = true;
     } else {
-      // Add as a third option
       auto.push({
         startUtc: userSlotUtc,
         score: userScore,
@@ -576,9 +618,6 @@ function generateSuggestions(cities) {
       });
     }
   }
-
-  // NOTE: The organizer’s chosen time is not yet encoded in the URL hash.
-  // TODO: extend updateHashFromCities/parseHash to optionally store date+time+USER_TZ.
 
   return { slots: auto, lengthMinutes };
 }
@@ -817,11 +856,12 @@ function saveStateToStorage() {
         slug: c.slug,
         people: c.people
       })),
-      params: {
-        date: (document.getElementById("dateInput") || {}).value || "",
-        time: (document.getElementById("timeInput") || {}).value || "",
-        length: (document.getElementById("lengthInput") || {}).value || ""
-      }
+params: {
+  date: (document.getElementById("dateInput") || {}).value || "",
+  timeEnabled: !!(document.getElementById("timeEnabled") && document.getElementById("timeEnabled").checked),
+  time: (document.getElementById("timeInput") || {}).value || "",
+  length: (document.getElementById("lengthInput") || {}).value || ""
+}
     };
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch (e) {
@@ -862,10 +902,19 @@ function loadStateFromStorageIfNeeded() {
       const dateEl = document.getElementById("dateInput");
       const timeEl = document.getElementById("timeInput");
       const lenEl  = document.getElementById("lengthInput");
+      const timeCb = document.getElementById("timeEnabled");
+      const timeRow = document.getElementById("timeInputRow");
+
       if (p.date && dateEl)   dateEl.value = p.date;
+      if (typeof p.timeEnabled === "boolean" && timeCb && timeRow) {
+        timeCb.checked = p.timeEnabled;
+        timeRow.style.display = p.timeEnabled ? "block" : "none";
+      }
       if (p.time && timeEl)   timeEl.value = p.time;
       if (p.length && lenEl)  lenEl.value = p.length;
     }
+
+
   } catch (e) {
     console.warn("Could not load state:", e);
   }
@@ -897,6 +946,35 @@ function initEvents() {
       saveStateToStorage();
     });
   }
+
+
+  const timeEnabled = document.getElementById("timeEnabled");
+  const timeInputRow = document.getElementById("timeInputRow");
+
+  if (timeEnabled && timeInputRow) {
+    timeEnabled.addEventListener("change", () => {
+      const enabled = timeEnabled.checked;
+      timeInputRow.style.display = enabled ? "block" : "none";
+
+      if (enabled) {
+        // Make sure organizer's timezone is represented
+        const added = ensureOrganizerCityPresent();
+        if (added) {
+          renderCitiesTable();
+        }
+
+        // Set default time when the user turns it on
+        defaultTimeToLocalNow();
+      } else {
+        const timeEl = document.getElementById("timeInput");
+        if (timeEl) timeEl.value = "";
+      }
+
+      renderSuggestions();
+      saveStateToStorage();
+    });
+  }
+
 
   const copyMarkdownBtn = document.getElementById("copyMarkdownBtn");
   if (copyMarkdownBtn) {
@@ -930,6 +1008,10 @@ function initEvents() {
 function defaultTimeToLocalNow() {
   const timeEl = document.getElementById("timeInput");
   if (!timeEl) return;
+
+  const cb = document.getElementById("timeEnabled");
+  if (cb && !cb.checked) return; // do nothing if the user hasn't enabled time
+
   if (timeEl.value) return; // respect stored value
 
   const now = new Date();
@@ -953,8 +1035,34 @@ async function init() {
   initUserTimezoneInfo();
   loadCitiesFromHash();
   loadStateFromStorageIfNeeded();
-  defaultTimeToLocalNow();
 
+  const cityInput = document.getElementById("cityInput");
+
+  if (citiesInPoll.length === 0) {
+    // No hash/state: assume this is a fresh visit. Add organizer's city.
+    const added = ensureOrganizerCityPresent();
+    if (added) {
+      if (cityInput) {
+        // Pre-fill the input with this city name to make it obvious
+        cityInput.value = added.name;
+      }
+    } else {
+      // If we cannot find a city for this timezone, at least suggest it as placeholder
+      const rep = findCityForTimeZone(USER_TZ);
+      if (rep && cityInput) {
+        cityInput.placeholder = rep.name;
+      }
+    }
+  } else {
+    // There are already cities (via hash or saved state).
+    // Just use the local timezone city as a placeholder suggestion, if we can.
+    const rep = findCityForTimeZone(USER_TZ);
+    if (rep && cityInput && !cityInput.placeholder) {
+      cityInput.placeholder = rep.name;
+    }
+  }
+
+  defaultTimeToLocalNow();
   renderCitiesTable();
   renderSuggestions();
 }

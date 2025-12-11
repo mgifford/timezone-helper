@@ -56,22 +56,26 @@
   <div class="flex">
     <div>
       <label for="dateInput">
-        Date (UTC, optional)<br>
+        Date<br>
         <input type="date" id="dateInput">
       </label>
       <div class="small">
         Leave empty to work with a generic weekday pattern.
       </div>
     </div>
-    <div>
-      <label for="timeInput">
-        Time (UTC, optional)<br>
-        <input type="time" id="timeInput" placeholder="(optional)">
-      </label>
-      <div class="small">
-        Leave empty to let the tool search across the day.
-      </div>
-    </div>
+<div>
+  <div>
+    <input type="checkbox" id="timeEnabled">
+    <label for="timeEnabled">Set a specific time (in your timezone)</label>
+  </div>
+
+  <div id="timeInputRow" style="display:none; margin-top:0.25rem;">
+    <label for="timeInput">
+      Time (UTC, optional)
+    </label><br>
+    <input type="time" id="timeInput">
+  </div>
+</div>
     <div>
       <label for="lengthInput">
         Length (minutes)<br>
@@ -103,7 +107,7 @@
     <thead>
       <tr>
         <th>Time zone</th>
-        <th>Example city</th>
+        <th>City</th>
         <th>Country</th>
         <th>DST</th>
         <th>People</th>
