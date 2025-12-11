@@ -17,12 +17,14 @@ function pad2(n) {
 
 function showError(msg) {
   const el = document.getElementById("loadError");
+  if (!el) return;
   el.textContent = msg;
   el.style.display = "block";
 }
 
 function clearError() {
   const el = document.getElementById("loadError");
+  if (!el) return;
   el.textContent = "";
   el.style.display = "none";
 }
@@ -60,7 +62,7 @@ function slugifyCity(name, countryCode) {
   return slug;
 }
 
-// Optional: show user timezone + UTC offset in UI if there is an element for it.
+// Timezone label helper
 function getUserTimezoneOffsetLabel() {
   try {
     const now = new Date();
@@ -73,7 +75,7 @@ function getUserTimezoneOffsetLabel() {
     const parts = dtf.formatToParts(now);
     const tzPart = parts.find(p => p.type === "timeZoneName");
     if (!tzPart) return "UTC";
-    // Example values are like "GMT-5" or "UTC+1"
+    // Example values: "GMT-5", "UTC+1"
     return tzPart.value.replace("GMT", "UTC");
   } catch (e) {
     return "UTC";
@@ -83,13 +85,13 @@ function getUserTimezoneOffsetLabel() {
 function initUserTimezoneInfo() {
   const offsetLabel = getUserTimezoneOffsetLabel();
 
-  // Optional info block, if you have <div id="userTimezoneInfo"></div>
+  // Optional visible info
   const infoEl = document.getElementById("userTimezoneInfo");
   if (infoEl) {
     infoEl.textContent = `Your timezone: ${USER_TZ} (${offsetLabel})`;
   }
 
-  // Update the label for the time input
+  // Update label for time input to reflect real timezone
   const timeLabel = document.querySelector("label[for='timeInput']");
   if (timeLabel) {
     timeLabel.textContent = `Time (${USER_TZ}, ${offsetLabel}, optional)`;
@@ -150,6 +152,7 @@ async function loadCitiesJson() {
 // 2. Autocomplete list
 function populateCityDatalist() {
   const dl = document.getElementById("cityDatalist");
+  if (!dl) return;
   dl.innerHTML = "";
   allCities.forEach(c => {
     const opt = document.createElement("option");
@@ -158,7 +161,8 @@ function populateCityDatalist() {
   });
 }
 
-// 3. URL hash handling (uses slug)
+// 3. URL hash handling (with weights)
+
 function updateHashFromCities() {
   if (!citiesInPoll.length) {
     window.location.hash = "";
@@ -167,7 +171,6 @@ function updateHashFromCities() {
 
   const segments = citiesInPoll.map(c => {
     const people = Number(c.people) || 0;
-    // Only include :N when N > 1
     if (people > 1) {
       return `${c.slug}:${people}`;
     }
@@ -216,7 +219,6 @@ function loadCitiesFromHash() {
     if (!base) continue;
 
     const clone = { ...base };
-
     if (item.people && item.people > 1) {
       clone.people = item.people;
     } else {
@@ -233,33 +235,40 @@ function loadCitiesFromHash() {
 
 // 4. City add/remove
 
-// Standard add with error messaging (used by button / form submit)
 function addCityByName(nameRaw) {
   const name = (nameRaw || "").trim();
   const errEl = document.getElementById("addCityError");
 
   if (!name) {
-    errEl.textContent = "Please type a city name.";
-    errEl.style.display = "block";
+    if (errEl) {
+      errEl.textContent = "Please type a city name.";
+      errEl.style.display = "block";
+    }
     return;
   }
 
   const city = allCitiesByNameLower[name.toLowerCase()];
   if (!city) {
-    errEl.textContent = `No city named "${name}" found in data.`;
-    errEl.style.display = "block";
+    if (errEl) {
+      errEl.textContent = `No city named "${name}" found in data.`;
+      errEl.style.display = "block";
+    }
     return;
   }
 
   const already = citiesInPoll.find(c => c.slug === city.slug);
   if (already) {
-    errEl.textContent = `"${city.name}" is already in the list.`;
-    errEl.style.display = "block";
+    if (errEl) {
+      errEl.textContent = `"${city.name}" is already in the list.`;
+      errEl.style.display = "block";
+    }
     return;
   }
 
-  errEl.textContent = "";
-  errEl.style.display = "none";
+  if (errEl) {
+    errEl.textContent = "";
+    errEl.style.display = "none";
+  }
 
   const clone = { ...city, people: 1 };
   citiesInPoll.push(clone);
@@ -271,7 +280,7 @@ function addCityByName(nameRaw) {
   saveStateToStorage();
 }
 
-// Auto-add for datalist selection / change, no errors or messages
+// Auto-add when the user chooses an exact city name from the datalist
 function autoAddCityIfExactMatch(nameRaw) {
   const name = (nameRaw || "").trim();
   if (!name) return;
@@ -301,9 +310,12 @@ function removeCity(slug) {
 }
 
 // 5. Date / time helpers
+
 function parseDateTimeSettings() {
-  const dateStr = document.getElementById("dateInput").value;   // "" or YYYY-MM-DD
-  const timeStr = document.getElementById("timeInput").value;   // "" or HH:MM
+  const dateEl = document.getElementById("dateInput");
+  const timeEl = document.getElementById("timeInput");
+  const dateStr = dateEl ? dateEl.value : "";
+  const timeStr = timeEl ? timeEl.value : "";
 
   let dateInfo = null;
   if (dateStr) {
@@ -322,7 +334,7 @@ function parseDateTimeSettings() {
 
 function buildUtcDate(dateInfo, hour, minute) {
   if (dateInfo) {
-    // Interpreting date as UTC calendar date for now; algorithm is UTC-based.
+    // Interpret the date as a UTC calendar date
     return new Date(Date.UTC(dateInfo.year, dateInfo.month - 1, dateInfo.day, hour, minute));
   } else {
     const today = new Date();
@@ -348,6 +360,7 @@ function localTimeParts(dateUtc, timeZone) {
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
+    second: "2-digit",
     hour12: false
   });
   const parts = fmt.formatToParts(dateUtc);
@@ -362,11 +375,12 @@ function localTimeParts(dateUtc, timeZone) {
     month: parseInt(obj.month, 10),
     day: parseInt(obj.day, 10),
     hour: parseInt(obj.hour, 10),
-    minute: parseInt(obj.minute, 10)
+    minute: parseInt(obj.minute, 10),
+    second: parseInt(obj.second, 10)
   };
 }
 
-// 24-hour range used in UI tables
+// Format for tables: 24-hour range with “different day” marker
 function formatLocalRange24(city, startUtc, meetingMinutes) {
   const startLocal = localTimeParts(startUtc, city.tz);
   const endLocal = localTimeParts(addMinutes(startUtc, meetingMinutes), city.tz);
@@ -385,7 +399,7 @@ function formatLocalRange24(city, startUtc, meetingMinutes) {
   return `${s}-${e} (different day)`;
 }
 
-// 12-hour helper for markdown
+// 12-hour helper and combined 24+12 for Markdown
 function to12hParts(hour, minute) {
   let suffix = hour < 12 ? "am" : "pm";
   let h = hour % 12;
@@ -393,7 +407,6 @@ function to12hParts(hour, minute) {
   return { h, minute: pad2(minute), suffix };
 }
 
-// Combined 24h + 12h range for markdown
 function formatLocalRange24and12(city, startUtc, meetingMinutes) {
   const startLocal = localTimeParts(startUtc, city.tz);
   const endLocal = localTimeParts(addMinutes(startUtc, meetingMinutes), city.tz);
@@ -411,10 +424,8 @@ function formatLocalRange24and12(city, startUtc, meetingMinutes) {
 
   let range12;
   if (start12.suffix === end12.suffix) {
-    // 6:00-7:00am
     range12 = `${start12.h}:${start12.minute}-${end12.h}:${end12.minute}${start12.suffix}`;
   } else {
-    // 11:30pm-1:00am
     range12 = `${start12.h}:${start12.minute}${start12.suffix}-${end12.h}:${end12.minute}${end12.suffix}`;
   }
 
@@ -426,6 +437,7 @@ function formatLocalRange24and12(city, startUtc, meetingMinutes) {
 }
 
 // 6. Scoring
+
 function classifyHour(hour) {
   if (hour >= 9 && hour < 17) return "good";
   if ((hour >= 7 && hour < 9) || (hour >= 17 && hour < 21)) return "ok";
@@ -458,28 +470,121 @@ function scoreSlot(cities, startUtc, meetingMinutes) {
   return score;
 }
 
-function generateSuggestions(cities) {
-  const lengthMinutes = parseInt(document.getElementById("lengthInput").value, 10) || 60;
-  const numSuggestions = 2; // fixed for now
+// 7. Timezone conversion: user local to UTC
 
+function getTimeZoneOffsetForDate(dateUtc, timeZone) {
+  // Returns offsetMinutes such that: local = UTC + offsetMinutes
+  const fmt = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false
+  });
+
+  const parts = fmt.formatToParts(dateUtc);
+  const obj = {};
+  for (const p of parts) {
+    if (p.type !== "literal") {
+      obj[p.type] = p.value;
+    }
+  }
+
+  const localMillis = Date.UTC(
+    parseInt(obj.year, 10),
+    parseInt(obj.month, 10) - 1,
+    parseInt(obj.day, 10),
+    parseInt(obj.hour, 10),
+    parseInt(obj.minute, 10),
+    parseInt(obj.second, 10)
+  );
+
+  const utcMillis = dateUtc.getTime();
+  const offsetMinutes = (localMillis - utcMillis) / (60 * 1000);
+  return offsetMinutes; // local = UTC + offsetMinutes
+}
+
+function userLocalTimeToUtc(dateInfo, timeInfo) {
+  // Converts the user’s local wall time in USER_TZ to a UTC Date.
+  // Returns null if no time is specified.
+  if (!timeInfo) return null;
+
+  const now = new Date();
+  const year = dateInfo ? dateInfo.year : now.getFullYear();
+  const monthIndex = dateInfo ? (dateInfo.month - 1) : now.getMonth();
+  const day = dateInfo ? dateInfo.day : now.getDate();
+
+  // Approximate this moment as if it were UTC, then compute the actual offset
+  const approxUtc = new Date(Date.UTC(
+    year,
+    monthIndex,
+    day,
+    timeInfo.hour,
+    timeInfo.minute,
+    0
+  ));
+
+  const offsetMinutes = getTimeZoneOffsetForDate(approxUtc, USER_TZ);
+
+  // If local = UTC + offset, then UTC = local - offset
+  return new Date(approxUtc.getTime() - offsetMinutes * 60 * 1000);
+}
+
+// 8. Suggestions: 2 best + 1 organizer-chosen
+
+function generateSuggestions(cities) {
+  const lengthEl = document.getElementById("lengthInput");
+  const lengthMinutes = parseInt(lengthEl ? lengthEl.value : "60", 10) || 60;
   const { dateInfo, timeInfo } = parseDateTimeSettings();
 
-  const slots = [];
+  const searchSlots = [];
+
+  // If time is specified, only its minute part affects search band
   const baseMinute = timeInfo ? timeInfo.minute : 0;
 
-  // Always search between 06:00 and 21:00 UTC
+  // Search between 06:00 and 21:00 UTC for auto suggestions
   for (let hour = 6; hour <= 21; hour++) {
     const startUtc = buildUtcDate(dateInfo, hour, baseMinute);
     const score = scoreSlot(cities, startUtc, lengthMinutes);
-    slots.push({ startUtc, score });
+    searchSlots.push({ startUtc, score, isUserProposed: false });
   }
 
-  slots.sort((a, b) => a.score - b.score);
-  const chosen = slots.slice(0, numSuggestions);
-  return { slots: chosen, lengthMinutes };
+  searchSlots.sort((a, b) => a.score - b.score);
+
+  // Two best automatic options
+  const auto = searchSlots.slice(0, 2);
+
+  // Organizer’s chosen time in USER_TZ, if time is specified
+  const userSlotUtc = userLocalTimeToUtc(dateInfo, timeInfo);
+  if (userSlotUtc) {
+    const userScore = scoreSlot(cities, userSlotUtc, lengthMinutes);
+    const existing = auto.find(
+      s => Math.abs(s.startUtc.getTime() - userSlotUtc.getTime()) < 60 * 1000
+    );
+
+    if (existing) {
+      existing.isUserProposed = true;
+    } else {
+      // Add as a third option
+      auto.push({
+        startUtc: userSlotUtc,
+        score: userScore,
+        isUserProposed: true
+      });
+    }
+  }
+
+  // NOTE: The organizer’s chosen time is not yet encoded in the URL hash.
+  // TODO: extend updateHashFromCities/parseHash to optionally store date+time+USER_TZ.
+
+  return { slots: auto, lengthMinutes };
 }
 
-// 7. Card visibility
+// 9. Card visibility
+
 function updateCardsVisibility() {
   const hasCities       = citiesInPoll.length >= 1;
   const hasEnoughCities = citiesInPoll.length >= 2;
@@ -499,9 +604,11 @@ function updateCardsVisibility() {
   }
 }
 
-// 8. Rendering cities table
+// 10. Rendering cities table
+
 function renderCitiesTable() {
   const tbody = document.querySelector("#citiesTable tbody");
+  if (!tbody) return;
   tbody.innerHTML = "";
 
   if (!citiesInPoll.length) {
@@ -557,23 +664,23 @@ function renderCitiesTable() {
     incBtn.textContent = "+";
     incBtn.className = "people-btn";
 
-decBtn.addEventListener("click", () => {
-  const current = Number(city.people) || 0;
-  city.people = Math.max(0, current - 1);
-  spanCount.textContent = city.people;
-  renderSuggestions();
-  updateHashFromCities();
-  saveStateToStorage();
-});
+    decBtn.addEventListener("click", () => {
+      const current = Number(city.people) || 0;
+      city.people = Math.max(0, current - 1);
+      spanCount.textContent = city.people;
+      renderSuggestions();
+      updateHashFromCities();
+      saveStateToStorage();
+    });
 
-incBtn.addEventListener("click", () => {
-  const current = Number(city.people) || 0;
-  city.people = current + 1;
-  spanCount.textContent = city.people;
-  renderSuggestions();
-  updateHashFromCities();
-  saveStateToStorage();
-});
+    incBtn.addEventListener("click", () => {
+      const current = Number(city.people) || 0;
+      city.people = current + 1;
+      spanCount.textContent = city.people;
+      renderSuggestions();
+      updateHashFromCities();
+      saveStateToStorage();
+    });
 
     tdPeople.appendChild(decBtn);
     tdPeople.appendChild(spanCount);
@@ -595,10 +702,12 @@ incBtn.addEventListener("click", () => {
   updateCardsVisibility();
 }
 
-// 9. Suggestions + Markdown
+// 11. Suggestions + Markdown
+
 function renderSuggestions() {
   const container = document.getElementById("suggestionsContainer");
   const mdEl = document.getElementById("markdownOutput");
+  if (!container || !mdEl) return;
 
   if (citiesInPoll.length < 2) {
     container.textContent = "Add at least two time zones to see suggestions.";
@@ -620,8 +729,9 @@ function renderSuggestions() {
 
   let html = "";
   slots.forEach((slot, idx) => {
-    const label = String.fromCharCode(65 + idx);
-    html += `<h3>Option ${label} (score ${slot.score})</h3>`;
+    const optLabel = String.fromCharCode(65 + idx);
+    const extra = slot.isUserProposed ? " (organizer's chosen time)" : "";
+    html += `<h3>Option ${optLabel}${extra} (score ${slot.score})</h3>`;
     html += `<div class="small">Start: ${fmtUtc(slot.startUtc)}; length ${lengthMinutes} minutes.</div>`;
     html += `<table><thead><tr><th>City</th><th>Local time</th><th>People</th><th>Comment</th></tr></thead><tbody>`;
 
@@ -664,6 +774,7 @@ function renderSuggestions() {
 
 function generateMarkdown(slots, lengthMinutes) {
   const mdEl = document.getElementById("markdownOutput");
+  if (!mdEl) return;
 
   const fmtUtc = date =>
     `${date.getUTCFullYear()}-${pad2(date.getUTCMonth() + 1)}-${pad2(date.getUTCDate())} ` +
@@ -673,8 +784,9 @@ function generateMarkdown(slots, lengthMinutes) {
   md += "We are trying to schedule a call. Here are the proposed options:\n\n";
 
   slots.forEach((slot, idx) => {
-    const label = String.fromCharCode(65 + idx);
-    md += `${idx + 1}. **Option ${label}**: ${fmtUtc(slot.startUtc)} (${lengthMinutes} minutes)\n`;
+    const optLabel = String.fromCharCode(65 + idx);
+    const extra = slot.isUserProposed ? " (organizer's chosen time)" : "";
+    md += `${idx + 1}. **Option ${optLabel}${extra}**: ${fmtUtc(slot.startUtc)} (${lengthMinutes} minutes)\n`;
     citiesInPoll.forEach(city => {
       const rng = formatLocalRange24and12(city, slot.startUtc, lengthMinutes);
       md += `   - ${city.name}: ${rng}\n`;
@@ -684,9 +796,9 @@ function generateMarkdown(slots, lengthMinutes) {
 
   md += "Please vote by reacting to this comment:\n";
   slots.forEach((slot, idx) => {
-    const label = String.fromCharCode(65 + idx);
-    const icon = idx === 0 ? "❤️" : idx === 1 ? "🚀" : "❓";
-    md += `- ${icon} for Option ${label}\n`;
+    const optLabel = String.fromCharCode(65 + idx);
+    const icon = idx === 0 ? "👍" : idx === 1 ? "👀" : "❓";
+    md += `- ${icon} for Option ${optLabel}\n`;
   });
 
   md += "\n";
@@ -695,7 +807,8 @@ function generateMarkdown(slots, lengthMinutes) {
   mdEl.value = md;
 }
 
-// 10. Local storage
+// 12. Local storage
+
 function saveStateToStorage() {
   if (!window.localStorage) return;
   try {
@@ -705,9 +818,9 @@ function saveStateToStorage() {
         people: c.people
       })),
       params: {
-        date: document.getElementById("dateInput").value || "",
-        time: document.getElementById("timeInput").value || "",
-        length: document.getElementById("lengthInput").value || ""
+        date: (document.getElementById("dateInput") || {}).value || "",
+        time: (document.getElementById("timeInput") || {}).value || "",
+        length: (document.getElementById("lengthInput") || {}).value || ""
       }
     };
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -746,45 +859,54 @@ function loadStateFromStorageIfNeeded() {
     // Restore params
     if (state.params) {
       const p = state.params;
-      if (p.date)   document.getElementById("dateInput").value = p.date;
-      if (p.time)   document.getElementById("timeInput").value = p.time;
-      if (p.length) document.getElementById("lengthInput").value = p.length;
+      const dateEl = document.getElementById("dateInput");
+      const timeEl = document.getElementById("timeInput");
+      const lenEl  = document.getElementById("lengthInput");
+      if (p.date && dateEl)   dateEl.value = p.date;
+      if (p.time && timeEl)   timeEl.value = p.time;
+      if (p.length && lenEl)  lenEl.value = p.length;
     }
   } catch (e) {
     console.warn("Could not load state:", e);
   }
 }
 
-// 11. Event wiring
+// 13. Events
+
 function initEvents() {
   const addCityForm = document.getElementById("addCityForm");
   const cityInput   = document.getElementById("cityInput");
 
-  // Keep button behaviour as fallback
-  addCityForm.addEventListener("submit", (e) => {
-    e.preventDefault();
-    addCityByName(cityInput.value);
-    cityInput.value = "";
-  });
+  if (addCityForm && cityInput) {
+    addCityForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      addCityByName(cityInput.value);
+      cityInput.value = "";
+    });
 
-  // Auto-add when a datalist value is picked / input loses focus with exact match
-  if (cityInput) {
     cityInput.addEventListener("change", () => {
       autoAddCityIfExactMatch(cityInput.value);
       cityInput.value = "";
     });
   }
 
-  document.getElementById("recomputeBtn").addEventListener("click", () => {
-    renderSuggestions();
-    saveStateToStorage();
-  });
+  const recomputeBtn = document.getElementById("recomputeBtn");
+  if (recomputeBtn) {
+    recomputeBtn.addEventListener("click", () => {
+      renderSuggestions();
+      saveStateToStorage();
+    });
+  }
 
-  document.getElementById("copyMarkdownBtn").addEventListener("click", () => {
-    const ta = document.getElementById("markdownOutput");
-    ta.select();
-    document.execCommand("copy");
-  });
+  const copyMarkdownBtn = document.getElementById("copyMarkdownBtn");
+  if (copyMarkdownBtn) {
+    copyMarkdownBtn.addEventListener("click", () => {
+      const ta = document.getElementById("markdownOutput");
+      if (!ta) return;
+      ta.select();
+      document.execCommand("copy");
+    });
+  }
 
   // Save meeting parameters on change
   ["dateInput", "timeInput", "lengthInput"].forEach(id => {
@@ -808,13 +930,12 @@ function initEvents() {
 function defaultTimeToLocalNow() {
   const timeEl = document.getElementById("timeInput");
   if (!timeEl) return;
-  if (timeEl.value) return; // respect localStorage / hash if already set
+  if (timeEl.value) return; // respect stored value
 
   const now = new Date();
   let hour = now.getHours();
   const mins = now.getMinutes();
 
-  // Round to nearest hour
   if (mins >= 30) {
     hour = (hour + 1) % 24;
   }
@@ -823,7 +944,8 @@ function defaultTimeToLocalNow() {
   timeEl.value = `${hh}:00`;
 }
 
-// 12. Init
+// 14. Init
+
 async function init() {
   await loadCitiesJson();
   initEvents();
