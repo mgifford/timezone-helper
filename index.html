@@ -149,20 +149,25 @@
   </div>
 
 
-<section id="cardMap" class="card" aria-labelledby="mapHeading" style="display:none;">
-  <h2 id="mapHeading">6. Participants map</h2>
+<div class="card" id="cardMap" style="display:none">
+  <h2>6. Participants map</h2>
   <p class="small">
-    Approximate positions of participants. Circle size reflects the number of people per city.
+    Approximate locations based on city time zones.
   </p>
-  <div class="map-container">
+  <div class="map-wrapper">
+    <img
+      src="img/world-map-timezone.svg"
+      alt="World map with time zones"
+      class="world-map-image"
+    >
     <svg
       id="participantsMap"
-      viewBox="0 0 800 300"
+      class="world-map-overlay"
+      aria-hidden="false"
       role="img"
-      aria-label="World map showing participant locations by city"
     ></svg>
   </div>
-</section>
+</div>
 
 <footer
       <p class="small muted">

@@ -54,6 +54,7 @@ th {
   color: #111827;
 }
 
+/* Map container styling */
 
 .map-container {
   width: 100%;
@@ -61,45 +62,80 @@ th {
   margin-top: 1rem;
   border: 1px solid #555;
   border-radius: 4px;
-  background-color: #0b1020;
   overflow: hidden;
 }
 
-/* Make SVG responsive */
-#participantsMap {
+##participantsMap {
   width: 100%;
   height: auto;
   display: block;
 }
 
-/* Optional: subtle gridlines for reference */
+/* Thin, subtle grid on top of the background */
 .map-grid-line {
-  stroke: #3a445a;
-  stroke-width: 0.5;
-  opacity: 0.6;
+  stroke: rgba(255, 255, 255, 0.35);
+  stroke-width: 0.8;
 }
 
-/* Circles for cities */
+/* Main dots: larger, with a halo */
 .map-city {
-  fill: #ffcc00;
-  fill-opacity: 0.9;
-  stroke: #000;
-  stroke-width: 1;
+  fill: #fffbcc;              /* pale yellow */
+  stroke: #000000;
+  stroke-width: 1.5;
 }
 
-/* For very small meetings, keep dots visible */
+/* Smaller groups still visible but slightly different color */
 .map-city-small {
-  fill: #00e6ff;
+  fill: #cde9ff;              /* pale blue */
 }
 
-/* Accessible outline if we ever make circles focusable */
-.map-city:focus {
-  outline: 2px solid #fff;
-  outline-offset: 2px;
+.participant-dot {
+  fill: #ffcc00;
+  stroke: #000;
+  stroke-width: 1.5;
+  opacity: 0.9;
 }
 
 input[type="number"] {
   width: 4rem;
+}
+
+.map-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.world-map-image {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.world-map-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.map-city {
+  fill: #ffcc00;
+  stroke: #000;
+  stroke-width: 0.7;
+  opacity: 0.9;
+}
+
+.map-city-small {
+  opacity: 0.8;
+}
+
+.map-grid-line {
+  stroke: rgba(255,255,255,0.15);
+  stroke-width: 0.5;
 }
 
 input,
