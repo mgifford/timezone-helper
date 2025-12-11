@@ -146,10 +146,29 @@
       Paste this into a GitHub issue and use reactions as votes.
     </p>
 
-    <p class="small muted">
+  </div>
+
+
+<section id="cardMap" class="card" aria-labelledby="mapHeading" style="display:none;">
+  <h2 id="mapHeading">6. Participants map</h2>
+  <p class="small">
+    Approximate positions of participants. Circle size reflects the number of people per city.
+  </p>
+  <div class="map-container">
+    <svg
+      id="participantsMap"
+      viewBox="0 0 800 300"
+      role="img"
+      aria-label="World map showing participant locations by city"
+    ></svg>
+  </div>
+</section>
+
+<footer
+      <p class="small muted">
       Want to improve this tool? Check out our <a href="https://github.com/mgifford/timezone-helper">GitHub Repo</a>
     </p>
-  </div>
+</footer>
 
   <script src="app.js"></script>
 </body>

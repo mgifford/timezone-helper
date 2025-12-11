@@ -742,6 +742,7 @@ function updateCardsVisibility() {
   const cardTimezones   = document.getElementById("cardTimezones");
   const cardSuggestions = document.getElementById("cardSuggestions");
   const cardMarkdown    = document.getElementById("cardMarkdown");
+  const cardMap         = document.getElementById("cardMap");
 
   if (cardTimezones) {
     cardTimezones.style.display = hasCities ? "block" : "none";
@@ -751,6 +752,9 @@ function updateCardsVisibility() {
   }
   if (cardMarkdown) {
     cardMarkdown.style.display = hasEnoughCities ? "block" : "none";
+  }
+  if (cardMap) {
+    cardMap.style.display = hasEnoughCities ? "block" : "none";
   }
 }
 
@@ -770,6 +774,7 @@ function renderCitiesTable() {
     tr.appendChild(td);
     tbody.appendChild(tr);
     updateCardsVisibility();
+    renderMap();
     return;
   }
 
@@ -850,6 +855,7 @@ function renderCitiesTable() {
   });
 
   updateCardsVisibility();
+  renderMap();
 }
 
 // 11. Suggestions + Markdown
@@ -963,6 +969,7 @@ function renderSuggestions() {
 
   container.innerHTML = html;
   generateMarkdown(slots, lengthMinutes, referenceDateUtc);
+  renderMap();
 }
 
 function generateMarkdown(slots, lengthMinutes, referenceDateUtc) {
@@ -1218,7 +1225,106 @@ function defaultTimeToLocalNow() {
   timeEl.value = `${hh}:00`;
 }
 
-// 14. Init
+// 14. Map
+
+// 15. Participants map (flat equirectangular projection)
+
+function renderMap() {
+  const svg = document.getElementById("participantsMap");
+  const cardMap = document.getElementById("cardMap");
+  if (!svg) return;
+
+  // Clear existing content
+  while (svg.firstChild) {
+    svg.removeChild(svg.firstChild);
+  }
+
+  // Only render if we actually have more than one city
+  if (citiesInPoll.length < 2) {
+    if (cardMap) cardMap.style.display = "none";
+    return;
+  }
+
+  // Ensure the map card is visible; updateCardsVisibility will also enforce this.
+  if (cardMap && cardMap.style.display === "none") {
+    cardMap.style.display = "block";
+  }
+
+  const width = 800;
+  const height = 300;
+  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+
+  // Background
+  const bg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  bg.setAttribute("x", "0");
+  bg.setAttribute("y", "0");
+  bg.setAttribute("width", String(width));
+  bg.setAttribute("height", String(height));
+  bg.setAttribute("fill", "#0b1020");
+  svg.appendChild(bg);
+
+  // Simple gridlines every 60° longitude, 30° latitude for orientation
+  const gridLongitudes = [-120, -60, 0, 60, 120];
+  const gridLatitudes = [-60, -30, 0, 30, 60];
+
+  gridLongitudes.forEach(lon => {
+    const x = ((lon + 180) / 360) * width;
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    line.setAttribute("x1", x);
+    line.setAttribute("y1", 0);
+    line.setAttribute("x2", x);
+    line.setAttribute("y2", height);
+    line.setAttribute("class", "map-grid-line");
+    svg.appendChild(line);
+  });
+
+  gridLatitudes.forEach(lat => {
+    const y = ((90 - lat) / 180) * height;
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    line.setAttribute("x1", 0);
+    line.setAttribute("y1", y);
+    line.setAttribute("x2", width);
+    line.setAttribute("y2", y);
+    line.setAttribute("class", "map-grid-line");
+    svg.appendChild(line);
+  });
+
+  // Plot each city as a circle, radius weighted by `people`
+  citiesInPoll.forEach(city => {
+    if (!Number.isFinite(city.lat) || !Number.isFinite(city.lon)) {
+      return;
+    }
+
+    // Clamp lon/lat into sensible ranges just in case
+    const lon = Math.max(-180, Math.min(180, city.lon));
+    const lat = Math.max(-90, Math.min(90, city.lat));
+
+    const x = ((lon + 180) / 360) * width;
+    const y = ((90 - lat) / 180) * height;
+
+    const people = Math.max(1, Number(city.people) || 1);
+    // Basic weighting: sqrt so big groups don't explode
+    const radius = 3 + Math.sqrt(people);
+
+    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    circle.setAttribute("cx", x);
+    circle.setAttribute("cy", y);
+    circle.setAttribute("r", radius.toFixed(1));
+    circle.setAttribute(
+      "class",
+      people > 3 ? "map-city" : "map-city map-city-small"
+    );
+
+    // Accessible title: city name, timezone, people
+    const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
+    title.textContent = `${city.name} (${city.tz}) – ${people} participant${people === 1 ? "" : "s"}`;
+    circle.appendChild(title);
+
+    svg.appendChild(circle);
+  });
+}
+
+// 15. Init
 
 async function init() {
   await loadCitiesJson();
@@ -1257,6 +1363,7 @@ async function init() {
   defaultTimeToLocalNow();
   renderCitiesTable();
   renderSuggestions();
+  renderMap();
 }
 
 init();

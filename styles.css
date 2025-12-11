@@ -54,6 +54,50 @@ th {
   color: #111827;
 }
 
+
+.map-container {
+  width: 100%;
+  max-width: 900px;
+  margin-top: 1rem;
+  border: 1px solid #555;
+  border-radius: 4px;
+  background-color: #0b1020;
+  overflow: hidden;
+}
+
+/* Make SVG responsive */
+#participantsMap {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Optional: subtle gridlines for reference */
+.map-grid-line {
+  stroke: #3a445a;
+  stroke-width: 0.5;
+  opacity: 0.6;
+}
+
+/* Circles for cities */
+.map-city {
+  fill: #ffcc00;
+  fill-opacity: 0.9;
+  stroke: #000;
+  stroke-width: 1;
+}
+
+/* For very small meetings, keep dots visible */
+.map-city-small {
+  fill: #00e6ff;
+}
+
+/* Accessible outline if we ever make circles focusable */
+.map-city:focus {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
 input[type="number"] {
   width: 4rem;
 }
