@@ -1,0 +1,112 @@
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  margin: 0;
+  padding: 1rem 2rem;
+}
+
+h1 {
+  font-size: 1.4rem;
+  margin-bottom: 0.3rem;
+}
+
+h2 {
+  font-size: 1.1rem;
+  margin-top: 0;
+}
+
+.flex {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.card {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background: #fafafa;
+}
+
+.small {
+  font-size: 0.8rem;
+  color: #555;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+th,
+td {
+  border: 1px solid #ddd;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.9rem;
+  text-align: left;
+}
+
+th {
+  background: #f0f0f0;
+}
+
+input[type="number"] {
+  width: 4rem;
+}
+
+input,
+select {
+  padding: 0.2rem 0.3rem;
+}
+
+textarea {
+  width: 100%;
+  min-height: 160px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.85rem;
+}
+
+button {
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+  border-radius: 4px;
+  border: 1px solid #888;
+  background: #f9f9f9;
+}
+
+button:hover {
+  background: #f1f1f1;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.1rem 0.4rem;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  margin-left: 0.3rem;
+}
+
+.badge-good {
+  background: #e0f7e9;
+  color: #166534;
+}
+
+.badge-ok {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.badge-bad {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.error {
+  color: #b91c1c;
+  font-size: 0.9rem;
+}
+
+.muted {
+  color: #777;
+}
