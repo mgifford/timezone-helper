@@ -576,6 +576,117 @@ function userLocalTimeToUtc(dateInfo, timeInfo) {
   return new Date(approxUtc.getTime() - offsetMinutes * 60 * 1000);
 }
 
+
+// 8. DST helpers (Europe & North America only)
+
+function getDstRegionForTz(tz) {
+  if (!tz) return null;
+  if (tz.startsWith("Europe/")) return "eu";
+  if (tz.startsWith("America/")) return "na";
+  return null;
+}
+
+function getDstPattern(region) {
+  if (region === "eu") {
+    return "Last Sunday in March & October";
+  }
+  if (region === "na") {
+    return "Second Sunday in March & First Sunday in November";
+  }
+  return "";
+}
+
+// weekday: 0=Sunday..6=Saturday, nth>=1
+function getNthWeekdayOfMonth(year, monthIndex, weekday, nth) {
+  const first = new Date(Date.UTC(year, monthIndex, 1));
+  const firstWeekday = first.getUTCDay();
+  const diff = (weekday - firstWeekday + 7) % 7;
+  const day = 1 + diff + (nth - 1) * 7;
+  return new Date(Date.UTC(year, monthIndex, day, 2, 0)); // 02:00 UTC-ish
+}
+
+function getLastWeekdayOfMonth(year, monthIndex, weekday) {
+  const last = new Date(Date.UTC(year, monthIndex + 1, 0)); // last day of month
+  const lastWeekday = last.getUTCDay();
+  const diff = (lastWeekday - weekday + 7) % 7;
+  const day = last.getUTCDate() - diff;
+  return new Date(Date.UTC(year, monthIndex, day, 1, 0)); // 01:00 UTC-ish
+}
+
+function getNaDstDates(year) {
+  // North America: second Sunday in March, first Sunday in November
+  const startUtc = getNthWeekdayOfMonth(year, 2, 0, 2);  // March, Sunday, 2nd
+  const endUtc   = getNthWeekdayOfMonth(year, 10, 0, 1); // November, Sunday, 1st
+  return { startUtc, endUtc };
+}
+
+function getEuDstDates(year) {
+  // Europe: last Sunday in March and October
+  const startUtc = getLastWeekdayOfMonth(year, 2, 0); // March
+  const endUtc   = getLastWeekdayOfMonth(year, 9, 0); // October
+  return { startUtc, endUtc };
+}
+
+/**
+ * For a DST-observing European / North American time zone and a reference date,
+ * returns an object:
+ * {
+ *   observes: true,
+ *   region: "eu" | "na",
+ *   pattern: "Last Sunday in March & October" | "Second Sunday in March & First Sunday in November",
+ *   startUtc, endUtc,
+ *   upcoming: boolean,     // within 30 days before next change
+ *   firstWeekAfter: boolean // within 7 days after change
+ * }
+ * or null if DST doesn't apply.
+ */
+function getDstStatus(city, referenceDateUtc) {
+  if (!city.observesDst) return null;
+
+  const region = getDstRegionForTz(city.tz);
+  if (!region) return null;
+
+  const year = referenceDateUtc.getUTCFullYear();
+  let dates;
+  if (region === "na") {
+    dates = getNaDstDates(year);
+  } else if (region === "eu") {
+    dates = getEuDstDates(year);
+  } else {
+    return null;
+  }
+
+  const { startUtc, endUtc } = dates;
+  const msPerDay = 24 * 60 * 60 * 1000;
+  const daysUntilStart = (startUtc - referenceDateUtc) / msPerDay;
+  const daysUntilEnd   = (endUtc   - referenceDateUtc) / msPerDay;
+
+  const upcoming =
+    (daysUntilStart >= 0 && daysUntilStart <= 30) ||
+    (daysUntilEnd   >= 0 && daysUntilEnd   <= 30);
+
+  const inFirstWeekAfterStart =
+    referenceDateUtc >= startUtc &&
+    referenceDateUtc < new Date(startUtc.getTime() + 7 * msPerDay);
+
+  const inFirstWeekAfterEnd =
+    referenceDateUtc >= endUtc &&
+    referenceDateUtc < new Date(endUtc.getTime() + 7 * msPerDay);
+
+  const firstWeekAfter = inFirstWeekAfterStart || inFirstWeekAfterEnd;
+
+  return {
+    observes: true,
+    region,
+    pattern: getDstPattern(region),
+    startUtc,
+    endUtc,
+    upcoming,
+    firstWeekAfter
+  };
+}
+
+
 // 8. Suggestions: 2 best + 1 organizer-chosen
 
 function generateSuggestions(cities) {
@@ -762,16 +873,49 @@ function renderSuggestions() {
     return;
   }
 
-  const fmtUtc = date =>
-    `${date.getUTCFullYear()}-${pad2(date.getUTCMonth() + 1)}-${pad2(date.getUTCDate())} ` +
-    `${pad2(date.getUTCHours())}:${pad2(date.getUTCMinutes())} UTC`;
+  // Determine reference date for DST logic:
+  // - If a date is chosen, use that date.
+  // - Otherwise use "today".
+  const { dateInfo } = parseDateTimeSettings();
+  const hasDate = !!dateInfo;
+  let referenceDateUtc;
+  if (hasDate) {
+    referenceDateUtc = new Date(Date.UTC(dateInfo.year, dateInfo.month - 1, dateInfo.day));
+  } else {
+    referenceDateUtc = new Date();
+  }
+
+  // Precompute DST status for each city
+  const dstMap = {};
+  citiesInPoll.forEach(city => {
+    const dst = getDstStatus(city, referenceDateUtc);
+    if (dst) {
+      dstMap[city.slug] = dst;
+    }
+  });
+
+  // If no date is chosen, only show time; if date is chosen, show date+time.
+  const fmtUtc = date => {
+    const timeStr = `${pad2(date.getUTCHours())}:${pad2(date.getUTCMinutes())} UTC`;
+    if (!hasDate) {
+      return timeStr;
+    }
+    return `${date.getUTCFullYear()}-${pad2(date.getUTCMonth() + 1)}-${pad2(date.getUTCDate())} ${timeStr}`;
+  };
 
   let html = "";
   slots.forEach((slot, idx) => {
     const optLabel = String.fromCharCode(65 + idx);
     const extra = slot.isUserProposed ? " (organizer's chosen time)" : "";
     html += `<h3>Option ${optLabel}${extra} (score ${slot.score})</h3>`;
-    html += `<div class="small">Start: ${fmtUtc(slot.startUtc)}; length ${lengthMinutes} minutes.</div>`;
+
+    if (hasDate) {
+      html += `<div class="small">Start: ${fmtUtc(slot.startUtc)}; length ${lengthMinutes} minutes.</div>`;
+    } else {
+      // You explicitly did not want a synthetic date here.
+      html += `<div class="small">Length: ${lengthMinutes} minutes.</div>`;
+    }
+
     html += `<table><thead><tr><th>City</th><th>Local time</th><th>People</th><th>Comment</th></tr></thead><tbody>`;
 
     citiesInPoll.forEach(city => {
@@ -796,11 +940,21 @@ function renderSuggestions() {
         badgeText = "night hours";
       }
 
+      const dst = dstMap[city.slug];
+      let extraNote = "";
+      if (dst && dst.observes) {
+        if (dst.firstWeekAfter) {
+          extraNote = " <strong>This is in the first week after a daylight savings change.</strong>";
+        } else if (dst.upcoming) {
+          extraNote = " Upcoming daylight savings change within about a month.";
+        }
+      }
+
       html += `<tr>
         <td>${city.name}</td>
         <td>${rng24}</td>
         <td>${city.people}</td>
-        <td><span class="badge ${badgeClass}">${badgeText}</span></td>
+        <td><span class="badge ${badgeClass}">${badgeText}</span>${extraNote}</td>
       </tr>`;
     });
 
@@ -808,16 +962,34 @@ function renderSuggestions() {
   });
 
   container.innerHTML = html;
-  generateMarkdown(slots, lengthMinutes);
+  generateMarkdown(slots, lengthMinutes, referenceDateUtc);
 }
 
-function generateMarkdown(slots, lengthMinutes) {
+function generateMarkdown(slots, lengthMinutes, referenceDateUtc) {
   const mdEl = document.getElementById("markdownOutput");
   if (!mdEl) return;
 
-  const fmtUtc = date =>
-    `${date.getUTCFullYear()}-${pad2(date.getUTCMonth() + 1)}-${pad2(date.getUTCDate())} ` +
-    `${pad2(date.getUTCHours())}:${pad2(date.getUTCMinutes())} UTC`;
+  // Determine whether a date was chosen.
+  const { dateInfo } = parseDateTimeSettings();
+  const hasDate = !!dateInfo;
+
+  // If referenceDateUtc was not passed (defensive), recompute
+  if (!referenceDateUtc) {
+    if (hasDate) {
+      referenceDateUtc = new Date(Date.UTC(dateInfo.year, dateInfo.month - 1, dateInfo.day));
+    } else {
+      referenceDateUtc = new Date();
+    }
+  }
+
+  // Helper: date+time when date is chosen, otherwise just time
+  const fmtUtc = date => {
+    const timeStr = `${pad2(date.getUTCHours())}:${pad2(date.getUTCMinutes())} UTC`;
+    if (!hasDate) {
+      return timeStr;
+    }
+    return `${date.getUTCFullYear()}-${pad2(date.getUTCMonth() + 1)}-${pad2(date.getUTCDate())} ${timeStr}`;
+  };
 
   let md = "";
   md += "We are trying to schedule a call. Here are the proposed options:\n\n";
@@ -826,17 +998,37 @@ function generateMarkdown(slots, lengthMinutes) {
     const optLabel = String.fromCharCode(65 + idx);
     const extra = slot.isUserProposed ? " (organizer's chosen time)" : "";
     md += `${idx + 1}. **Option ${optLabel}${extra}**: ${fmtUtc(slot.startUtc)} (${lengthMinutes} minutes)\n`;
+
     citiesInPoll.forEach(city => {
       const rng = formatLocalRange24and12(city, slot.startUtc, lengthMinutes);
-      md += `   - ${city.name}: ${rng}\n`;
+      const dst = getDstStatus(city, referenceDateUtc);
+
+      let line = `   - ${city.name}: ${rng}`;
+
+      // Always include DST info for DST-observing EU/NA cities
+      if (dst && dst.observes) {
+        if (dst.pattern) {
+          line += ` - Daylight Savings (${dst.pattern})`;
+        } else {
+          line += " - Daylight Savings";
+        }
+
+        if (dst.firstWeekAfter) {
+          line += " **This is in the first week after a daylight savings change.**";
+        } else if (dst.upcoming) {
+          line += " _(Upcoming daylight savings change within about a month.)_";
+        }
+      }
+
+      md += line + "\n";
     });
+
     md += "\n";
   });
-
   md += "Please vote by reacting to this comment:\n";
   slots.forEach((slot, idx) => {
     const optLabel = String.fromCharCode(65 + idx);
-    const icon = idx === 0 ? "👍" : idx === 1 ? "👀" : "❓";
+    const icon = idx === 0 ? "❤️" : idx === 1 ? "🚀" : "👀";
     md += `- ${icon} for Option ${optLabel}\n`;
   });
 
