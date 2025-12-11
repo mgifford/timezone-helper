@@ -130,6 +130,7 @@ Score = sum(city_penalty × participants). Lower is better.
 - Improve participant weighting controls.
 - Integrate GitHub API for automated issue creation.
 - Better grouping of cities within the same timezone.
+- Better GitHub API integration
 
 ## Contributing
 
