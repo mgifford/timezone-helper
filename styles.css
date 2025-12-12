@@ -331,3 +331,71 @@ a:focus-visible {
   white-space: nowrap;
   border: 0;
 }
+
+
+
+/* Bluesky Links */
+/* Container card */
+.post__likes {
+  margin-block: 2rem;
+  padding: 1.25rem 1.5rem;
+  border-radius: 0.75rem;
+  text-align: center;
+  margin-inline: auto;
+
+  /* KEY CHANGES: no hard-coded colors */
+  color: inherit; /* use whatever the page is using (light or dark) */
+  border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+  background-color: color-mix(in srgb, currentColor 4%, transparent);
+
+  /* optional layout */
+  max-width: 32rem;
+}
+
+/* Heading */
+.post__likesTitle {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* CTA link */
+.post__likesCta {
+  display: inline-block;
+  margin-bottom: 0.75rem;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+  color: inherit; /* let the global link color / theme handle it */
+  display: inline-block;
+  margin-inline: auto;
+}
+
+/* Avatar list */
+.post__likesList {
+  list-style: none;
+  padding: 0;
+  margin: 1rem auto 0;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+
+.post__like {
+  margin: 0;
+  padding: 0;
+}
+
+.post__like__avatar {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+
+  /* also theme-aware */
+  border: 2px solid color-mix(in srgb, currentColor 40%, transparent);
+  display: block;
+}
+
+.social-media-links {
+    text-align: center;
+}
