@@ -1,6 +1,7 @@
 // Configuration
 const CITIES_URL = "data/timezones-complete.json";
 const STORAGE_KEY = "global-meeting-helper-v1";
+const THEME_STORAGE_KEY = "global-meeting-helper-theme";
 
 // In-memory state
 let allCities = [];              // all cities from JSON
@@ -9,6 +10,43 @@ let citiesInPoll = [];           // selected cities (time zones / cities)
 
 // User timezone
 const USER_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+
+// Theme management
+function initTheme() {
+  const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+  const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const theme = storedTheme || (systemPrefersDark ? 'dark' : 'light');
+  
+  setTheme(theme);
+  
+  // Listen for system theme changes
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+    if (!localStorage.getItem(THEME_STORAGE_KEY)) {
+      setTheme(e.matches ? 'dark' : 'light');
+    }
+  });
+}
+
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  const themeIcon = document.getElementById('themeIcon');
+  if (themeIcon) {
+    themeIcon.textContent = theme === 'dark' ? '☀️' : '🌙';
+  }
+  const themeToggle = document.getElementById('themeToggle');
+  if (themeToggle) {
+    themeToggle.setAttribute('aria-label', 
+      theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
+    );
+  }
+}
+
+function toggleTheme() {
+  const currentTheme = document.documentElement.getAttribute('data-theme');
+  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  setTheme(newTheme);
+  localStorage.setItem(THEME_STORAGE_KEY, newTheme);
+}
 
 // Utility
 function pad2(n) {
@@ -1138,15 +1176,6 @@ function initEvents() {
     });
   }
 
-  const recomputeBtn = document.getElementById("recomputeBtn");
-  if (recomputeBtn) {
-    recomputeBtn.addEventListener("click", () => {
-      renderSuggestions();
-      saveStateToStorage();
-    });
-  }
-
-
   const timeEnabled = document.getElementById("timeEnabled");
   const timeInputRow = document.getElementById("timeInputRow");
 
@@ -1309,8 +1338,17 @@ function renderMap() {
 // 15. Init
 
 async function init() {
+  // Initialize theme first to avoid flash
+  initTheme();
+  
   await loadCitiesJson();
   initEvents();
+  
+  // Add theme toggle event listener
+  const themeToggle = document.getElementById('themeToggle');
+  if (themeToggle) {
+    themeToggle.addEventListener('click', toggleTheme);
+  }
 
   initUserTimezoneInfo();
   loadCitiesFromHash();

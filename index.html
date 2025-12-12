@@ -7,6 +7,9 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <button id="themeToggle" type="button" aria-label="Toggle dark mode">
+    <span id="themeIcon">🌙</span>
+  </button>
   <h1>Global Meeting Time Helper</h1>
   <p class="small">
     Add cities below, then choose an optional date/time and meeting length.  
@@ -88,9 +91,6 @@
         </select>
       </label>
     </div>
-  </div>
-  <div style="margin-top:0.8rem;">
-    <button id="recomputeBtn" type="button">Recompute suggestions</button>
   </div>
   <p class="small muted" style="margin-top:0.4rem;">
     Uses browser timezone data for DST. Around DST change weeks you still need human sanity checks.

@@ -1,9 +1,52 @@
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9fafb;
+  --text-primary: #111827;
+  --text-secondary: #374151;
+  --text-muted: #4b5563;
+  --border-color: #d4d4d8;
+  --table-header-bg: #e5e7eb;
+  --input-border: #9ca3af;
+  --button-bg: #111827;
+  --button-hover-bg: #1f2937;
+  --button-text: #f9fafb;
+  --link-color: #1d4ed8;
+  --focus-color: #2563eb;
+  --error-color: #b91c1c;
+  --map-grid: rgba(255, 255, 255, 0.15);
+  --map-dot-yellow: #ffcc00;
+  --map-dot-pale-yellow: #fffbcc;
+  --map-dot-pale-blue: #cde9ff;
+}
+
+[data-theme="dark"] {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --text-primary: #f1f5f9;
+  --text-secondary: #e2e8f0;
+  --text-muted: #cbd5e1;
+  --border-color: #475569;
+  --table-header-bg: #1e293b;
+  --input-border: #64748b;
+  --button-bg: #1d4ed8;
+  --button-hover-bg: #1e40af;
+  --button-text: #ffffff;
+  --link-color: #93c5fd;
+  --focus-color: #60a5fa;
+  --error-color: #fca5a5;
+  --map-grid: rgba(0, 0, 0, 0.3);
+  --map-dot-yellow: #fbbf24;
+  --map-dot-pale-yellow: #fef3c7;
+  --map-dot-pale-blue: #bfdbfe;
+}
+
 body {
   font-family: system-ui, -apple-system, sans-serif;
   margin: 0;
   padding: 1rem 2rem;
-  background: #ffffff;
-  color: #111827; /* very dark grey, good contrast */
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 h1 {
@@ -23,16 +66,17 @@ h2 {
 }
 
 .card {
-  border: 1px solid #d4d4d8;        /* higher contrast border */
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   padding: 1rem;
   margin-bottom: 1rem;
-  background: #f9fafb;              /* very light grey */
+  background: var(--bg-secondary);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .small {
   font-size: 0.85rem;
-  color: #374151;                   /* darker than #555 */
+  color: var(--text-secondary);
 }
 
 table {
@@ -43,15 +87,15 @@ table {
 
 th,
 td {
-  border: 1px solid #d4d4d8;
+  border: 1px solid var(--border-color);
   padding: 0.4rem 0.6rem;
   font-size: 0.9rem;
   text-align: left;
 }
 
 th {
-  background: #e5e7eb;              /* header row contrast */
-  color: #111827;
+  background: var(--table-header-bg);
+  color: var(--text-primary);
 }
 
 /* Map container styling */
@@ -79,18 +123,18 @@ th {
 
 /* Main dots: larger, with a halo */
 .map-city {
-  fill: #fffbcc;              /* pale yellow */
+  fill: var(--map-dot-pale-yellow);
   stroke: #000000;
   stroke-width: 1.5;
 }
 
 /* Smaller groups still visible but slightly different color */
 .map-city-small {
-  fill: #cde9ff;              /* pale blue */
+  fill: var(--map-dot-pale-blue);
 }
 
 .participant-dot {
-  fill: #ffcc00;
+  fill: var(--map-dot-yellow);
   stroke: #000;
   stroke-width: 1.5;
   opacity: 0.9;
@@ -123,7 +167,7 @@ input[type="number"] {
 }
 
 .map-city {
-  fill: #ffcc00;
+  fill: var(--map-dot-yellow);
   stroke: #000;
   stroke-width: 0.7;
   opacity: 0.9;
@@ -134,7 +178,7 @@ input[type="number"] {
 }
 
 .map-grid-line {
-  stroke: rgba(255,255,255,0.15);
+  stroke: var(--map-grid);
   stroke-width: 0.5;
 }
 
@@ -142,8 +186,10 @@ input,
 select {
   padding: 0.25rem 0.4rem;
   border-radius: 4px;
-  border: 1px solid #9ca3af;
+  border: 1px solid var(--input-border);
   font-size: 0.9rem;
+  background: var(--bg-primary);
+  color: var(--text-primary);
 }
 
 /* Textarea styling */
@@ -154,8 +200,10 @@ textarea {
     "Liberation Mono", "Courier New", monospace;
   font-size: 0.85rem;
   border-radius: 4px;
-  border: 1px solid #9ca3af;
+  border: 1px solid var(--input-border);
   padding: 0.4rem 0.5rem;
+  background: var(--bg-primary);
+  color: var(--text-primary);
 }
 
 /* Buttons with good contrast and clear focus */
@@ -163,15 +211,16 @@ button {
   padding: 0.4rem 0.8rem;
   cursor: pointer;
   border-radius: 4px;
-  border: 1px solid #111827;
-  background: #111827;
-  color: #f9fafb;
+  border: 1px solid var(--button-bg);
+  background: var(--button-bg);
+  color: var(--button-text);
   font-size: 0.9rem;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 button:hover {
-  background: #1f2937;
-  border-color: #1f2937;
+  background: var(--button-hover-bg);
+  border-color: var(--button-hover-bg);
 }
 
 /* Smaller buttons for +/- people controls */
@@ -186,7 +235,7 @@ button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid #2563eb;
+  outline: 2px solid var(--focus-color);
   outline-offset: 2px;
 }
 
@@ -205,9 +254,19 @@ textarea:focus-visible {
   color: #065f46;        /* dark green, high contrast */
 }
 
+[data-theme="dark"] .badge-good {
+  background: #064e3b;   /* dark green background */
+  color: #d1fae5;        /* light green text */
+}
+
 .badge-ok {
   background: #fffbeb;   /* very light amber */
   color: #92400e;        /* dark amber, high contrast */
+}
+
+[data-theme="dark"] .badge-ok {
+  background: #78350f;   /* dark amber background */
+  color: #fef3c7;        /* light amber text */
 }
 
 .badge-bad {
@@ -215,23 +274,49 @@ textarea:focus-visible {
   color: #b91c1c;        /* dark red, high contrast */
 }
 
+[data-theme="dark"] .badge-bad {
+  background: #7f1d1d;   /* dark red background */
+  color: #fecaca;        /* light red text */
+}
+
 .error {
-  color: #b91c1c;
+  color: var(--error-color);
   font-size: 0.9rem;
 }
 
 .muted {
-  color: #4b5563;        /* darker muted text */
+  color: var(--text-muted);
 }
 
 /* Link color with good contrast */
 a {
-  color: #1d4ed8;
+  color: var(--link-color);
 }
 
 a:focus-visible {
-  outline: 2px solid #2563eb;
+  outline: 2px solid var(--focus-color);
   outline-offset: 2px;
+}
+
+/* Theme toggle button */
+#themeToggle {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  padding: 0.5rem;
+  border-radius: 50%;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+#themeToggle:hover {
+  transform: scale(1.05);
 }
 
 /* Optional visually hidden text helper if you need it later */
