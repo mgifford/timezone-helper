@@ -307,7 +307,7 @@ Planned improvements:
 - More explicit configuration of “acceptable” work hours per region.
 - Better visualisation (e.g. a light/dark world map) tied to the selected times.
 
-#AI Disclosure
+## AI Disclosure
 
 Yes. AI was used in creating this tool. There be dragons! 
 
