@@ -280,6 +280,42 @@ Steps:
 
 ---
 
+## Social Media Optimization
+
+The site includes comprehensive meta tags for optimal sharing across social platforms:
+
+### What's included
+
+- **Open Graph tags** (Facebook, LinkedIn, WhatsApp)
+- **Twitter Card tags** for rich previews
+- **SEO meta tags** for search engines
+- Theme color for mobile browsers
+- Canonical URL to prevent duplicate content issues
+
+### Social preview image
+
+Create a social preview image at `img/social-preview.png` (1200 × 630 pixels recommended).
+
+This image appears when someone shares the tool on social media. It should:
+- Clearly show the tool's purpose
+- Include readable text even at small sizes
+- Have good contrast and be visually appealing
+- Be under 1 MB in file size
+
+See [img/README.md](img/README.md) for detailed specifications.
+
+### Testing your social cards
+
+Before sharing widely, test how your cards appear:
+
+- **Facebook/LinkedIn**: [Facebook Sharing Debugger](https://developers.facebook.com/tools/debug/)
+- **Twitter**: [Twitter Card Validator](https://cards-dev.twitter.com/validator)
+- **General**: [OpenGraph.xyz](https://www.opengraph.xyz/)
+
+**Note**: After updating meta tags or images, you may need to clear the cache using the platform's debugging tools.
+
+---
+
 ## Deploying to GitHub Pages
 
 1. Push the project to GitHub.
