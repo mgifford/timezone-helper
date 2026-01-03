@@ -90,7 +90,7 @@
   <h2>2. Meeting parameters</h2>
   <div class="flex">
     <div>
-      <label for="dateInput">
+      <label>
         Date<br>
         <input type="date" id="dateInput">
       </label>
@@ -112,7 +112,7 @@
   </div>
 </div>
     <div>
-      <label for="lengthInput">
+      <label>
         Length (minutes)<br>
         <select id="lengthInput">
           <option value="30">30</option>
@@ -138,12 +138,12 @@
   <table id="citiesTable">
     <thead>
       <tr>
-        <th>Time zone</th>
-        <th>City</th>
-        <th>Country</th>
-        <th>DST</th>
-        <th>People</th>
-        <th></th>
+        <th scope="col">Time zone</th>
+        <th scope="col">City</th>
+        <th scope="col">Country</th>
+        <th scope="col">DST</th>
+        <th scope="col">People</th>
+        <th scope="col">Actions</th>
       </tr>
     </thead>
     <tbody>
@@ -174,7 +174,7 @@
     <div style="margin-top:0.5rem;">
       <button id="copyMarkdownBtn" type="button">Copy Markdown</button>
     </div>
-    <p class="small"></p>
+    <p class="small">
       Paste this into a GitHub issue and use reactions as votes.
     </p>
 
@@ -202,14 +202,13 @@
   </div>
 </div>
 
-<footer
-      <p class="small muted">
-      Want to improve this tool? Check out our <a href="https://github.com/mgifford/timezone-helper">GitHub Repo</a>
-    </p>
+<footer>
+  <p class="small muted">
+    Want to improve this tool? Check out our <a href="https://github.com/mgifford/timezone-helper">GitHub Repo</a>
+  </p>
 
   <!-- Bluesky Footer -->
-<meta data-bsky-post-id="3m7sbwzbyvc2l" />
-<section class="post__likes" data-bsky-container>
+<section class="post__likes" data-bsky-container data-bsky-post-id="3m7sbwzbyvc2l">
   <h3 class="post__likesTitle">
     🦋 <span data-bsky-likes-count></span> likes on Bluesky
   </h3>
