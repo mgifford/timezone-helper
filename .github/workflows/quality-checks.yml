@@ -1,0 +1,186 @@
+name: Quality Checks
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  html-validation:
+    name: HTML Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install html-validate
+        run: npm install --save-dev html-validate
+      
+      - name: Validate HTML files
+        run: npx html-validate "*.html"
+        continue-on-error: false
+
+  accessibility-testing:
+    name: Accessibility Testing (WCAG 2.2 AA)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: |
+          npm install --save-dev @playwright/test @axe-core/playwright axe-core
+          npx playwright install --with-deps chromium
+      
+      - name: Start local server
+        run: |
+          python3 -m http.server 8080 &
+          echo "SERVER_PID=$!" >> $GITHUB_ENV
+          sleep 3
+      
+      - name: Run accessibility tests
+        run: npx playwright test
+        env:
+          BASE_URL: http://localhost:8080
+      
+      - name: Upload accessibility report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: accessibility-report
+          path: playwright-report/
+          retention-days: 30
+      
+      - name: Stop local server
+        if: always()
+        run: kill $SERVER_PID || true
+
+  security-checks:
+    name: Security Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      
+      - name: Check for hardcoded secrets
+        run: |
+          echo "Scanning for hardcoded secrets and credentials..."
+          
+          # Check for common secret patterns
+          SECRETS_FOUND=0
+          
+          # API keys, tokens, passwords
+          if grep -rE "(api[_-]?key|apikey|api[_-]?secret|password|passwd|pwd|token|secret[_-]?key|private[_-]?key|auth[_-]?token|access[_-]?token)\s*[:=]\s*['\"][^'\"]{8,}" --include="*.html" --include="*.js" .; then
+            echo "❌ Found potential hardcoded secrets"
+            SECRETS_FOUND=1
+          fi
+          
+          # AWS keys
+          if grep -rE "AKIA[0-9A-Z]{16}" --include="*.html" --include="*.js" .; then
+            echo "❌ Found potential AWS access key"
+            SECRETS_FOUND=1
+          fi
+          
+          # Generic tokens (base64-ish strings)
+          if grep -rE "(Bearer|token|key)\s*[:=]\s*['\"][A-Za-z0-9+/]{40,}[=]{0,2}['\"]" --include="*.html" --include="*.js" .; then
+            echo "❌ Found potential hardcoded token"
+            SECRETS_FOUND=1
+          fi
+          
+          if [ $SECRETS_FOUND -eq 0 ]; then
+            echo "✅ No hardcoded secrets found"
+          else
+            exit 1
+          fi
+      
+      - name: Check for unsafe inline JavaScript
+        run: |
+          echo "Checking for unsafe inline JavaScript patterns..."
+          
+          UNSAFE_JS_FOUND=0
+          
+          # Check for eval() usage
+          if grep -rE "eval\s*\(" --include="*.html" --include="*.js" .; then
+            echo "⚠️  Warning: Found eval() usage (potential XSS vector)"
+            UNSAFE_JS_FOUND=1
+          fi
+          
+          # Check for innerHTML with user input (basic pattern)
+          if grep -rE "\.innerHTML\s*=" --include="*.js" .; then
+            echo "⚠️  Warning: Found innerHTML assignment (verify sanitization)"
+          fi
+          
+          # Check for document.write
+          if grep -rE "document\.write\s*\(" --include="*.html" --include="*.js" .; then
+            echo "⚠️  Warning: Found document.write() usage"
+          fi
+          
+          if [ $UNSAFE_JS_FOUND -eq 0 ]; then
+            echo "✅ No critical unsafe JavaScript patterns found"
+          fi
+          
+          # Don't fail on warnings for inline JS, just report
+          exit 0
+      
+      - name: Check for tracking scripts and third-party security
+        run: python3 .github/scripts/security-check.py
+      
+      - name: Verify external links security
+        run: |
+          echo "Checking external links for security attributes..."
+          
+          ISSUES_FOUND=0
+          
+          # Check for external links without rel="noopener noreferrer"
+          if grep -rE '<a[^>]+href\s*=\s*["\']https?://' --include="*.html" . | grep -v 'rel=' | grep -v 'localhost'; then
+            echo "⚠️  Warning: Some external links may be missing rel='noopener noreferrer'"
+          fi
+          
+          # Check for http:// (not https://) in external resources
+          if grep -rE '(src|href)\s*=\s*["\']http://[^"\']+["\']' --include="*.html" . | grep -v 'localhost'; then
+            echo "⚠️  Warning: Found non-HTTPS external resources (mixed content risk)"
+          fi
+          
+          echo "✅ External link security check complete"
+          exit 0
+
+  report:
+    name: Quality Report Summary
+    runs-on: ubuntu-latest
+    needs: [html-validation, accessibility-testing, security-checks]
+    if: always()
+    
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## Quality Check Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| HTML Validation | ${{ needs.html-validation.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Accessibility Testing | ${{ needs.accessibility-testing.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security Checks | ${{ needs.security-checks.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY

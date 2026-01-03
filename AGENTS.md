@@ -87,20 +87,66 @@ Accessibility work focuses on:
 - Do not commit secrets or API keys.
 
 ## Testing Expectations
-Manual testing is required for changes affecting behavior or UI:
-- Keyboard-only walkthrough
-- Verification of focus visibility
-- Testing around daylight saving changes
+
+### Automated Quality Checks (Required)
+The project includes automated quality checks via GitHub Actions that run on all pushes and pull requests:
+
+**HTML Validation:**
+- Validates HTML syntax and structure using html-validate
+- Checks WCAG-related HTML requirements
+- Build fails on syntax errors or invalid markup
+
+**Accessibility Testing:**
+- Automated WCAG 2.2 AA compliance checks using Playwright + axe-core
+- Tests all pages listed in `tests/accessibility.spec.js`
+- Build fails on critical or serious accessibility violations
+- Warns (non-blocking) on moderate violations
+
+**Security Checks:**
+- Scans for hardcoded secrets, API keys, or credentials
+- Detects third-party tracking scripts (violations of privacy policy)
+- Checks for unsafe JavaScript patterns
+- Verifies external resources use HTTPS and have proper security attributes
+- Build fails on secrets or tracking scripts; warns on other issues
+
+See [.github/QUALITY_CHECKS.md](.github/QUALITY_CHECKS.md) for full documentation.
+
+**Running checks locally:**
+```bash
+npm install                  # First time only
+npm run quality:all          # Run all checks
+npm run validate:html        # HTML only
+npm run test:accessibility   # Accessibility only (requires local server)
+npm run security:check       # Security only
+```
+
+### Manual Testing (Still Required)
+Automated tests do not replace manual verification. Manual testing is required for:
+- Keyboard-only walkthrough of complete user flows
+- Verification of focus visibility and tab order
+- Testing around daylight saving transitions
 - Testing with different locales and time zones
 - Zoom testing up to 200%
+- Screen reader testing with actual assistive technology
+- Cross-browser verification (Chrome, Firefox, Safari, Edge)
+- Mobile device testing (touch targets, viewport behavior)
 
-Automated tests are encouraged but do not replace manual verification.
+Manual testing catches context-specific issues that automated tools cannot detect.
 
 ## Contribution Standards
 Pull requests should include:
 - A description of the change and its intent
 - Notes on any UI or accessibility impact
 - Documentation of known limitations or edge cases introduced
+- Confirmation that automated quality checks pass locally (run `npm run quality:all`)
+- Evidence of manual testing where applicable
+
+All pull requests must pass automated quality checks before merge:
+- HTML validation must pass with no errors
+- Accessibility tests must pass with no critical or serious violations
+- Security checks must pass with no secrets or tracking scripts detected
+
+The automated workflow provides detailed reports on failures. Review the Actions tab for specifics.
 
 ## Definition of Done
 A change is complete only when:
@@ -109,6 +155,8 @@ A change is complete only when:
 - Keyboard and accessibility behavior has not regressed
 - Edge cases are handled or explicitly documented
 - No hidden assumptions are introduced
+- All automated quality checks pass (HTML validation, accessibility, security)
+- Manual testing has been performed for user-facing changes
 
 ## GitHub Pages constraints (required)
 

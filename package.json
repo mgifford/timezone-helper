@@ -1,0 +1,27 @@
+{
+  "name": "timezone-helper",
+  "version": "1.0.0",
+  "description": "A timezone comparison and conversion tool",
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:accessibility": "playwright test",
+    "validate:html": "html-validate \"*.html\"",
+    "security:check": "python3 .github/scripts/security-check.py",
+    "quality:all": "npm run validate:html && npm run security:check && npm run test"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.8.0",
+    "@playwright/test": "^1.40.0",
+    "axe-core": "^4.8.0",
+    "html-validate": "^8.0.0"
+  },
+  "keywords": [
+    "timezone",
+    "converter",
+    "time",
+    "accessibility"
+  ],
+  "author": "",
+  "license": "MIT"
+}
