@@ -347,4 +347,6 @@ Planned improvements:
 
 Yes. AI was used in creating this tool. There be dragons! 
 
+## Open Source
+
 Contributions and suggestions are welcome.
