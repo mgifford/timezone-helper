@@ -122,8 +122,8 @@ If all participants share the same timezone, the suggestion logic still runs, bu
   - Leave empty to search “today” from a UTC perspective.
   - If set, all times (both UTC and local) are computed for that calendar date, including Daylight Savings offsets.
 
-- **Set a specific time (in your timezone)**  
-  - Checkbox.
+- **My timezone**  
+  - Checkbox (checked by default).
   - When checked:
     - The time widget appears.
     - The time is interpreted in your browser’s timezone (e.g. `America/Toronto`).
