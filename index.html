@@ -59,15 +59,15 @@
   <div class="card">
     <h2>1. Add cities</h2>
     <p class="small">
-      Start typing a city name (for example, <code>Toronto</code>) and select it from the suggestions, then click <strong>Add city</strong>.
-      The list comes from <code>data/cities.json</code>.
+      Start typing a city name (for example, <code>Toronto, CA</code>) and select it from the suggestions, then click <strong>Add city</strong>.
+      Each city is listed with its country code to help distinguish cities that share a name (e.g. Birmingham, GB vs Birmingham, US).
     </p>
 
     <form id="addCityForm" class="flex" autocomplete="off">
       <div>
         <label>
           City<br>
-          <input type="text" id="cityInput" list="cityDatalist" placeholder="Toronto">
+          <input type="text" id="cityInput" list="cityDatalist" placeholder="Toronto, CA">
         </label>
         <datalist id="cityDatalist">
           <!-- Filled by JS -->
