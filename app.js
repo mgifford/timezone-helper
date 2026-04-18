@@ -198,9 +198,12 @@ async function loadCitiesJson() {
       const lat = typeof entry.lat === "number" ? entry.lat : 0;
       const lon = typeof entry.lon === "number" ? entry.lon : 0;
 
+      const displayName = countryCode ? `${name}, ${countryCode}` : String(name);
+
       return {
         slug: slugifyCity(name, countryCode),
         name: String(name),
+        displayName,
         country: String(country),
         tz: String(tz),
         lat,
@@ -210,11 +213,15 @@ async function loadCitiesJson() {
       };
     });
 
-    // index by case-insensitive name for autocomplete lookup
+    // index by case-insensitive name and displayName for autocomplete lookup
     allCitiesByNameLower = {};
     allCities.forEach(c => {
-      const key = c.name.toLowerCase();
-      allCitiesByNameLower[key] = c;
+      const nameKey = c.name.toLowerCase();
+      allCitiesByNameLower[nameKey] = c;
+      const displayKey = c.displayName.toLowerCase();
+      if (displayKey !== nameKey) {
+        allCitiesByNameLower[displayKey] = c;
+      }
     });
 
     populateCityDatalist();
@@ -232,7 +239,7 @@ function populateCityDatalist() {
   dl.innerHTML = "";
   allCities.forEach(c => {
     const opt = document.createElement("option");
-    opt.value = c.name;
+    opt.value = c.displayName;
     dl.appendChild(opt);
   });
 }
